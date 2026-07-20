@@ -11,9 +11,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # Atualize a data do arquivo a cada revisão do OpenDATASUS.
-      SRAG_URLS: "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SRAG/2026/INFLUD26-20-07-2026.parquet"
+    # A URL agora é descoberta automaticamente via API do OpenDATASUS.
+    # Se um dia quiser fixar um arquivo específico, defina SRAG_URLS aqui:
+    # env:
+    #   SRAG_URLS: "https://.../INFLUD26-DD-MM-AAAA.parquet"
     steps:
       - uses: actions/checkout@v4
 
@@ -22,16 +23,15 @@ jobs:
           r-version: "release"
           use-public-rspm: true      # binários prontos -> não compila DuckDB
 
-      # Cache da biblioteca R: runs seguintes reaproveitam os pacotes.
       - name: Cache de pacotes R
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: r-${{ runner.os }}-duckdb-DBI-v1
+          key: r-${{ runner.os }}-duckdb-DBI-jsonlite-v2
           restore-keys: r-${{ runner.os }}-
 
       - name: Instalar dependências
-        run: Rscript -e 'p <- c("duckdb","DBI"); i <- p[!p %in% rownames(installed.packages())]; if (length(i)) install.packages(i)'
+        run: Rscript -e 'p <- c("duckdb","DBI","jsonlite"); i <- p[!p %in% rownames(installed.packages())]; if (length(i)) install.packages(i)'
 
       - name: Rodar pipeline
         run: Rscript run_pipeline.R
