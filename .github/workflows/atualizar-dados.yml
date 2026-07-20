@@ -31,6 +31,9 @@ jobs:
             any::lubridate
             any::readr
             any::jsonlite
+            any::duckdb
+            any::curl
+            any::httr
 
       - name: Rodar pipeline (download + filtro + preparo)
         run: |
@@ -49,5 +52,7 @@ jobs:
             echo "Sem mudanças nos dados. Nada a commitar."
           else
             git commit -m "Atualização automática dos dados SRAG RIDE ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            # Puxa mudanças remotas antes do push (evita 'fetch first' / rejected).
+            git pull --rebase origin main
             git push
           fi
