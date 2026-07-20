@@ -1,49 +1,54 @@
-name: Atualizar SRAG RIDE-DF
+name: Atualizar dados SRAG RIDE
 
 on:
   schedule:
-    - cron: "0 9 * * 1"      # toda segunda, 09:00 UTC
-  workflow_dispatch:          # permite rodar manualmente
+    # cron em UTC. 09:00 UTC = 06:00 Brasília (UTC-3). Seg (1) e Ter (2).
+    - cron: "0 9 * * 1,2"
+  workflow_dispatch: {}   # permite rodar manualmente pelo botão "Run workflow"
 
 permissions:
-  contents: write             # deixa o bot commitar o CSV de volta
+  contents: write          # necessário para commitar o CSV gerado
 
 jobs:
-  build:
+  preparar-dados:
     runs-on: ubuntu-latest
-    # A URL agora é descoberta automaticamente via API do OpenDATASUS.
-    # Se um dia quiser fixar um arquivo específico, defina SRAG_URLS aqui:
-    # env:
-    #   SRAG_URLS: "https://.../INFLUD26-DD-MM-AAAA.parquet"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
 
-      - uses: r-lib/actions/setup-r@v2
+      - name: Instalar R
+        uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "release"
-          use-public-rspm: true      # binários prontos -> não compila DuckDB
+          use-public-rspm: true   # instala pacotes como binários (rápido)
 
-      - name: Cache de pacotes R
-        uses: actions/cache@v4
+      - name: Instalar pacotes R
+        uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          path: ${{ env.R_LIBS_USER }}
-          key: r-${{ runner.os }}-duckdb-DBI-jsonlite-v2
-          restore-keys: r-${{ runner.os }}-
+          packages: |
+            any::dplyr
+            any::tidyr
+            any::stringr
+            any::lubridate
+            any::readr
+            any::jsonlite
 
-      - name: Instalar dependências
-        run: Rscript -e 'p <- c("duckdb","DBI","jsonlite"); i <- p[!p %in% rownames(installed.packages())]; if (length(i)) install.packages(i)'
+      - name: Rodar pipeline (download + filtro + preparo)
+        run: |
+          # Ajuste estes caminhos aos scripts que já existem no seu repo.
+          # 01 baixa o INFLUD do S3; 02 filtra pela RIDE -> data/dados_limpos_df.csv
+          Rscript R/01_download.R
+          Rscript R/02_filter_clean.R
+          # 03 aplica todas as derivações -> data/srag_ride_pronto.csv
+          Rscript R/03_prepara.R
 
-      - name: Rodar pipeline
-        run: Rscript run_pipeline.R
-
-      - name: Commitar saída se mudou
+      - name: Commitar dados atualizados
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/dados_limpos_df.csv
+          git add data/dados_limpos_df.csv data/srag_ride_pronto.csv
           if git diff --staged --quiet; then
-            echo "Sem mudanças."
+            echo "Sem mudanças nos dados. Nada a commitar."
           else
-            git commit -m "Atualiza SRAG RIDE-DF ($(date +%F))"
+            git commit -m "Atualização automática dos dados SRAG RIDE ($(date -u +'%Y-%m-%d %H:%M UTC'))"
             git push
           fi
