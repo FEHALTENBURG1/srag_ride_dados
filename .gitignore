@@ -1,0 +1,10 @@
+# Brutos do SRAG: grandes demais para o Git
+data-raw/
+*.parquet
+*.csv.gz
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+renv/library/
