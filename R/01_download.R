@@ -1,14 +1,13 @@
 # ---------------------------------------------------------------------------
-# 01_download.R  ->  Baixa os PARQUET brutos do SRAG para data-raw/
+# 01_download.R  ->  Descobre e baixa o PARQUET mais recente do SRAG.
 # Brutos NÃO entram no Git (ver .gitignore).
 # ---------------------------------------------------------------------------
 source("R/config.R")
 
 dir.create(dir_raw, showWarnings = FALSE, recursive = TRUE)
 
-if (length(urls_srag) == 0) {
-  stop("Nenhuma URL definida. Ajuste `urls_srag` em R/config.R ou a env SRAG_URLS.")
-}
+urls_srag <- resolver_urls_srag()
+if (length(urls_srag) == 0) stop("Não foi possível resolver nenhuma URL do SRAG.")
 
 baixar <- function(url) {
   destino <- file.path(dir_raw, basename(sub("\\?.*$", "", url)))
