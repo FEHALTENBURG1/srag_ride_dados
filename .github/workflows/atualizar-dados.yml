@@ -34,10 +34,9 @@ jobs:
 
       - name: Rodar pipeline (download + filtro + preparo)
         run: |
-          # Ajuste estes caminhos aos scripts que já existem no seu repo.
-          # 01 baixa o INFLUD do S3; 02 filtra pela RIDE -> data/dados_limpos_df.csv
-          Rscript R/01_download.R
-          Rscript R/02_filter_clean.R
+          # run_pipeline.R já roda 01_download.R + 02_filter_clean.R
+          # e gera data/dados_limpos_df.csv
+          Rscript run_pipeline.R
           # 03 aplica todas as derivações -> data/srag_ride_pronto.csv
           Rscript R/03_prepara.R
 
