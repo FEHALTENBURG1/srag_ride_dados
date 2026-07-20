@@ -218,7 +218,10 @@ base <- base %>%
     ID_MUNICIP = normalizar_texto(ID_MUNICIP),
     ID_MN_RESI = normalizar_texto(ID_MN_RESI)
   ) %>%
-  filter(CO_MUN_NOT %in% codigos_ride) %>%
+  # Mantém o mesmo critério abrangente do 02_filter_clean.R (notificação OU
+  # residência na RIDE). O 02 já filtrou; este filtro é só uma salvaguarda e
+  # NÃO deve excluir residentes da RIDE notificados fora dela.
+  filter(CO_MUN_NOT %in% codigos_ride | CO_MUN_RES %in% codigos_ride) %>%
   left_join(ref_notificacao, by = "CO_MUN_NOT") %>%
   left_join(ref_residencia,  by = "CO_MUN_RES") %>%
   mutate(
