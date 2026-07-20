@@ -152,9 +152,15 @@ pos <- function(x) { v <- converter_numero(x); !is.na(v) & v == 1 }
 converter_data <- function(x) {
   x <- as.character(x)
   res <- as.Date(rep(NA_real_, length(x)), origin = "1970-01-01")
+  # 1) ISO com T e Z:  2026-04-04T00:00:00.000Z
   iso_tz <- suppressWarnings(as_date(as_datetime(x, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")))
   f <- is.na(res); res[f] <- iso_tz[f]
+  # 2) Data + hora com ESPAÇO (formato do parquet/DuckDB):  2026-05-04 00:00:00
+  f <- is.na(res)
+  if (any(f)) res[f] <- suppressWarnings(as_date(ymd_hms(x[f], quiet = TRUE)))
+  # 3) ISO simples:  2026-05-04
   f <- is.na(res); if (any(f)) res[f] <- suppressWarnings(ymd(x[f], quiet = TRUE))
+  # 4) Brasileiro:    04/05/2026
   f <- is.na(res); if (any(f)) res[f] <- suppressWarnings(dmy(x[f], quiet = TRUE))
   as.Date(res, origin = "1970-01-01")
 }
