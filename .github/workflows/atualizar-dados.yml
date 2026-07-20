@@ -1,4 +1,3 @@
-
 name: Atualizar SRAG RIDE-DF
 
 on:
@@ -6,12 +5,14 @@ on:
     - cron: "0 9 * * 1"      # toda segunda, 09:00 UTC
   workflow_dispatch:          # permite rodar manualmente
 
+permissions:
+  contents: write             # deixa o bot commitar o CSV de volta
+
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Atualize a data do arquivo aqui a cada revisão do OpenDATASUS,
-      # ou automatize a descoberta da URL via API do CKAN.
+      # Atualize a data do arquivo a cada revisão do OpenDATASUS.
       SRAG_URLS: "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SRAG/2026/INFLUD26-20-07-2026.parquet"
     steps:
       - uses: actions/checkout@v4
@@ -19,9 +20,18 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: "release"
+          use-public-rspm: true      # binários prontos -> não compila DuckDB
+
+      # Cache da biblioteca R: runs seguintes reaproveitam os pacotes.
+      - name: Cache de pacotes R
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-${{ runner.os }}-duckdb-DBI-v1
+          restore-keys: r-${{ runner.os }}-
 
       - name: Instalar dependências
-        run: Rscript -e 'install.packages(c("duckdb","DBI"), repos="https://cloud.r-project.org")'
+        run: Rscript -e 'p <- c("duckdb","DBI"); i <- p[!p %in% rownames(installed.packages())]; if (length(i)) install.packages(i)'
 
       - name: Rodar pipeline
         run: Rscript run_pipeline.R
