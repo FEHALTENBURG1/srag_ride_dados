@@ -51,5 +51,3 @@ if (tam_mb > limite_mb_github) {
     "Saída (%.1f MB) acima de %d MB. Considere Git LFS ou GitHub Releases.",
     tam_mb, limite_mb_github))
 }
-EOF
-echo ok
